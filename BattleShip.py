@@ -1,17 +1,29 @@
-import keyboard
+import keyboard # imports
 import colorama
 from termcolor import colored
 import time
 import os
+from os import path
+import random
 
 colorama.init()
 
+# Defining Variables
 player = 0
 Pieces = []
 Board = []
+Room = ""
 
 
-def clear():
+def Generation(): # Geneartes Room Code
+    global Room
+    AllCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    for _ in range(4):
+        Room = Room + AllCharacters[random.randrange(len(AllCharacters))]
+    print(colored(Room, "cyan"))
+
+
+def clear(): # resets board to the orignal state
     global Board
     Board = []
     for i in range(10):
@@ -22,36 +34,29 @@ def clear():
             Board[i][n].append("cyan")
 
 
-clear()
-
-def store():
+def store(): # adds to local server aka: txt file
     for i in range(10):
         BoardList = []
         for n in range(10):
             BoardList.append(Board[i][n][0])
-        file = open("Projects/Server.txt", "a")
+        file = open(Room + ".txt", "a")
         file.write(str(BoardList))
         file.write("\n")
         file.close()
     
 
-
-def printscreen():
+def printscreen(): # Prints the board
     clear()
     for i in Pieces:
         place(i[0], i[1], i[2], i[3])
     os.system('cls')
     for i in range(10):
-        # if Board[i][n][1]:
-        # else:
-        # stdscr.addstr(i*2, n*10, colored(str(Board[i][n][0]), "blue"))
         print(colored(Board[i][0][0], Board[i][0][1]), colored(Board[i][1][0], Board[i][1][1]), colored(Board[i][2][0], Board[i][2][1]), colored(Board[i][3][0], Board[i][3][1]), colored(Board[i][4][0], Board[i][4][1]), colored(Board[i][5][0], Board[i][5][1]), colored(Board[i][6][0], Board[i][6][1]), colored(Board[i][7][0], Board[i][7][1]), colored(Board[i][8][0], Board[i][8][1]), colored(Board[i][9][0], Board[i][9][1]))
         print()
-        # stdscr.refresh()
 
 
-def place(y, x, length, rotation):
-    global Board
+def place(y, x, length, rotation): # Placing Ships on Board
+    global Board # Pieces getting added to board
     if rotation:
         for i in range(length):
             if Board[y+i][x][0] == "[#]":
@@ -64,12 +69,36 @@ def place(y, x, length, rotation):
             Board[y][x+i][0] = "[#]"
 
 
-def gameloop():
-    # Join or make a room
+def gameloop(): # Main Game Loop
+    clear()
+    global Room
+    
+    while True: # Join or make a room
+        print(colored("Join: J, Make a New Room: M", "cyan"))
+        inputvar = keyboard.read_key()
+        os.system('cls')
+        if inputvar == "j":
+            print(colored("Room Code:", "cyan"))
+            inputVar = input()
+            if path.exists(inputVar + ".txt"):
+                Room = inputVar
+                file = open(Room + ".txt", "a")
+                file.write("\n")
+                file.close()
+                break
+        elif inputvar == "m":
+            print(colored("Room Code:", "cyan"))
+            Generation()
+            file = open(Room + ".txt", "w")
+            file.close()
+            print(colored("Waiting For Person to Join", "cyan"))
+            while True:
+                if len(open(Room + ".txt").readlines()) == 1:
+                    break
+            break
 
-
-    # Placing Ships
-    for i in range(5):  # length of ships
+    for i in range(5): # Placing Ships
+        # length of ships
         if i == 0:
             length = 2
         if i == 1 or i == 2:
@@ -80,8 +109,8 @@ def gameloop():
             length = 5
         Pieces.append([0, 0, length, True])
         finished = False
-        while not finished:
-            printscreen() # input and movement
+        while not finished: # input and movement
+            printscreen()
             inputvar = keyboard.read_key()
             if inputvar == "d":
                 Pieces[i][1] = Pieces[i][1] + 1
@@ -107,9 +136,11 @@ def gameloop():
             if inputvar == "q":
                 quit()
             if inputvar == "t":
-                store()
+                break
             time.sleep(0.2)
-    store()
+
+    input()
+    os.remove(Room + ".txt")
 
 
 gameloop()
