@@ -1,6 +1,6 @@
 # BattleShip
-ASCII BattleShip in Python
-
+ASCII BattleShip in Python<br />
+<br />
 
 Don't Forget requirements.txt
 
