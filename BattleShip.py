@@ -1,5 +1,4 @@
 import keyboard
-import curses
 import colorama
 from termcolor import colored
 import time
