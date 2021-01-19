@@ -5,6 +5,13 @@ import time
 import os
 from os import path
 import random
+import socket
+import sys
+
+INET_PORT = 10000
+
+# Create a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 colorama.init()
 
@@ -13,14 +20,6 @@ player = 0
 Pieces = []
 Board = []
 Room = ""
-
-
-def Generation(): # Geneartes Room Code
-    global Room
-    AllCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    for _ in range(4):
-        Room = Room + AllCharacters[random.randrange(len(AllCharacters))]
-    print(colored(Room, "cyan"))
 
 
 def clear(): # resets board to the orignal state
@@ -32,17 +31,6 @@ def clear(): # resets board to the orignal state
             Board[i].append([])
             Board[i][n].append("[ ]")
             Board[i][n].append("cyan")
-
-
-def store(): # adds to local server aka: txt file
-    for i in range(10):
-        BoardList = []
-        for n in range(10):
-            BoardList.append(Board[i][n][0])
-        file = open(Room + ".txt", "a")
-        file.write(str(BoardList))
-        file.write("\n")
-        file.close()
     
 
 def printscreen(): # Prints the board
@@ -80,21 +68,19 @@ def gameloop(): # Main Game Loop
         if inputvar == "j":
             print(colored("Room Code:", "cyan"))
             inputVar = input()
-            if path.exists(inputVar + ".txt"):
-                Room = inputVar
-                file = open(Room + ".txt", "a")
-                file.write("\n")
-                file.close()
-                break
+            Room = inputVar
+            server_address = ('localhost', INET_PORT)
+            print('connecting to %s port %s', server_address)
+            sock.connect(server_address)
+            break
         elif inputvar == "m":
             print(colored("Room Code:", "cyan"))
-            Generation()
-            file = open(Room + ".txt", "w")
-            file.close()
+            print(colored("Ignore Above", "cyan"))
             print(colored("Waiting For Person to Join", "cyan"))
-            while True:
-                if len(open(Room + ".txt").readlines()) == 1:
-                    break
+            server_address = ("localhost", INET_PORT)
+            sock.bind(server_address)
+            sock.listen(1)
+            connection, client_address = sock.accept()
             break
 
     for i in range(5): # Placing Ships
@@ -140,7 +126,5 @@ def gameloop(): # Main Game Loop
             time.sleep(0.2)
 
     input()
-    os.remove(Room + ".txt")
-
 
 gameloop()
