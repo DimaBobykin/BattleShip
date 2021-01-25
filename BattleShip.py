@@ -3,7 +3,6 @@ import colorama
 from termcolor import colored
 import time
 import os
-from os import path
 import random
 import socket
 import sys
@@ -18,8 +17,54 @@ colorama.init()
 # Defining Variables
 player = 0
 Pieces = []
+TargetBoard = []
 Board = []
 Room = ""
+connection = None
+
+
+def attack(player): # Attacks
+    global connection
+    if player == 1: # check host or client
+        # Grab input 0
+        Y = input()
+        X = input()
+        # Send input 1
+        sock.sendall(str.encode(Y))
+        sock.sendall(str.encode(X))
+        # Wait result 2
+        print(sock.recv(16))
+    else: 
+        # Grab input 0
+        Y = input()
+        X = input()
+        # Send input 1
+        connection.sendall(str.encode(Y))
+        connection.sendall(str.encode(X))
+        # Wait result 2
+        print(connection.recv(16))
+
+
+def waitattack(player): # Waits for attack
+    global connection
+    if player == 1: # check host or client
+        # wait for request
+        Y = int(sock.recv(16))
+        X = int(sock.recv(16))
+        # send data back
+        if Board[Y][X][0] == "[#]":
+            sock.sendall(str.encode("Hit"))
+        else:
+            sock.sendall(str.encode("Miss"))
+    else:
+        # wait for request
+        Y = int(connection.recv(16))
+        X = int(connection.recv(16))
+        # send data back
+        if Board[Y][X][0] == "[#]":
+            connection.sendall(str.encode("Hit"))
+        else:
+            connection.sendall(str.encode("Miss"))
 
 
 def clear(): # resets board to the orignal state
@@ -31,7 +76,7 @@ def clear(): # resets board to the orignal state
             Board[i].append([])
             Board[i][n].append("[ ]")
             Board[i][n].append("cyan")
-    
+ 
 
 def printscreen(): # Prints the board
     clear()
@@ -60,6 +105,17 @@ def place(y, x, length, rotation): # Placing Ships on Board
 def gameloop(): # Main Game Loop
     clear()
     global Room
+    global player
+    global connection
+    global TargetBoard
+
+    for i in range(10):
+        TargetBoard.append([])
+        for n in range(10):
+            TargetBoard[i].append([])
+            TargetBoard[i][n].append("[ ]")
+            TargetBoard[i][n].append("cyan")
+
     
     while True: # Join or make a room
         print(colored("Join: J, Make a New Room: M", "cyan"))
@@ -72,10 +128,10 @@ def gameloop(): # Main Game Loop
             server_address = ('localhost', INET_PORT)
             print('connecting to %s port %s', server_address)
             sock.connect(server_address)
+            player = 1
             break
         elif inputvar == "m":
-            print(colored("Room Code:", "cyan"))
-            print(colored("Ignore Above", "cyan"))
+            player = 0
             print(colored("Waiting For Person to Join", "cyan"))
             server_address = ("localhost", INET_PORT)
             sock.bind(server_address)
@@ -124,6 +180,19 @@ def gameloop(): # Main Game Loop
             if inputvar == "t":
                 break
             time.sleep(0.2)
+
+    while True:
+        if player == 0:
+            finished = False
+            while not finished:
+                attack(player)
+                waitattack(player)
+        if player == 1:
+            finished = False
+            while not finished:
+                waitattack(player)
+                attack(player)
+
 
     input()
 
