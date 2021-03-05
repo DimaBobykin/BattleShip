@@ -24,72 +24,110 @@ connection = None
 
 
 def attack(player): # Attacks
+    Info = [["[ ]", 0, 0, "grey"]]
     global connection
+    global TargetBoard
+    TargetBoard = clear()
+    print(TargetBoard)
+    printscreen(TargetBoard)
+    # Grab input 0
+    while True:
+        for Elements in Info:
+            TargetBoard[Elements[1]][Elements[2]] = Elements[0]
+        inputvar = keyboard.read_key()
+        if inputvar == "d":
+            Info[0][2] += 1
+        if inputvar == "a":
+            Info[0][2] += -1
+        if inputvar == "w":
+            Info[0][1] += -1
+        if inputvar == "s":
+            Info[0][1] += 1
+        if inputvar == "c":
+            break
+
+    Y = Info[0][1]
+    X = Info[0][2]
+
     if player == 1: # check host or client
-        # Grab input 0
-        Y = input()
-        X = input()
         # Send input 1
         sock.sendall(str.encode(Y))
         sock.sendall(str.encode(X))
         # Wait result 2
-        print(sock.recv(16))
+        Data = sock.recv(16)
+        Data = Data.decode("utf-8") 
+        print(Data)
+        if Data == "Yes":
+            Info.append(["[X]", Y, X, "red"])
+        else:
+            Info.append(["[O]", Y, X, "cyan"])
+        printscreen(TargetBoard)
     else: 
-        # Grab input 0
-        Y = input()
-        X = input()
         # Send input 1
         connection.sendall(str.encode(Y))
         connection.sendall(str.encode(X))
         # Wait result 2
-        print(connection.recv(16))
+        Data = connection.recv(16)
+        Data = Data.decode("utf-8") 
+        print(Data)
+        if Data == "Yes":
+            Info.append(["[X]", Y, X, "red"])
+        else:
+            Info.append(["[O]", Y, X, "cyan"])
+        printscreen(TargetBoard)
 
 
 def waitattack(player): # Waits for attack
     global connection
+    global Board
+    printscreen(Board)
     if player == 1: # check host or client
         # wait for request
         Y = int(sock.recv(16))
         X = int(sock.recv(16))
         # send data back
         if Board[Y][X][0] == "[#]":
-            sock.sendall(str.encode("Hit"))
+            sock.sendall(str.encode("Yes"))
         else:
-            sock.sendall(str.encode("Miss"))
+            sock.sendall(str.encode("No"))
     else:
         # wait for request
         Y = int(connection.recv(16))
         X = int(connection.recv(16))
         # send data back
         if Board[Y][X][0] == "[#]":
-            connection.sendall(str.encode("Hit"))
+            connection.sendall(str.encode("Yes"))
         else:
-            connection.sendall(str.encode("Miss"))
+            connection.sendall(str.encode("No"))
 
 
 def clear(): # resets board to the orignal state
-    global Board
-    Board = []
-    for i in range(10):
-        Board.append([])
-        for n in range(10):
-            Board[i].append([])
-            Board[i][n].append("[ ]")
-            Board[i][n].append("cyan")
- 
+    return [[["[ ]", "cyan"] for n in range(10)] for i in range(10)]
+Board = clear() 
 
-def printscreen(): # Prints the board
-    clear()
+def printscreen(Board): # Prints the board
+    Board = clear()
     for i in Pieces:
-        place(i[0], i[1], i[2], i[3])
-    os.system('cls')
+        place(i[0], i[1], i[2], i[3], Board)
+    # os.system('cls')
     for i in range(10):
-        print(colored(Board[i][0][0], Board[i][0][1]), colored(Board[i][1][0], Board[i][1][1]), colored(Board[i][2][0], Board[i][2][1]), colored(Board[i][3][0], Board[i][3][1]), colored(Board[i][4][0], Board[i][4][1]), colored(Board[i][5][0], Board[i][5][1]), colored(Board[i][6][0], Board[i][6][1]), colored(Board[i][7][0], Board[i][7][1]), colored(Board[i][8][0], Board[i][8][1]), colored(Board[i][9][0], Board[i][9][1]))
+        print(
+            colored(Board[i][0][0], Board[i][0][1]), 
+            colored(Board[i][1][0], Board[i][1][1]), 
+            colored(Board[i][2][0], Board[i][2][1]), 
+            colored(Board[i][3][0], Board[i][3][1]), 
+            colored(Board[i][4][0], Board[i][4][1]), 
+            colored(Board[i][5][0], Board[i][5][1]), 
+            colored(Board[i][6][0], Board[i][6][1]), 
+            colored(Board[i][7][0], Board[i][7][1]), 
+            colored(Board[i][8][0], Board[i][8][1]),
+            colored(Board[i][9][0], Board[i][9][1]))
         print()
+    print(Pieces)
 
 
-def place(y, x, length, rotation): # Placing Ships on Board
-    global Board # Pieces getting added to board
+def place(y, x, length, rotation, Board): # Placing Ships on Board
+     # Pieces getting added to board
     if rotation:
         for i in range(length):
             if Board[y+i][x][0] == "[#]":
@@ -100,22 +138,24 @@ def place(y, x, length, rotation): # Placing Ships on Board
             if Board[y][x+i][0] == "[#]":
                 Board[y][x+i][1] = "red"
             Board[y][x+i][0] = "[#]"
+    return Board
 
 
 def gameloop(): # Main Game Loop
-    clear()
+    # Defining Vars, Etc.
+    global Board
+    Board = clear()
     global Room
     global player
     global connection
     global TargetBoard
 
-    for i in range(10):
+    for i in range(10): # Making Target Board
         TargetBoard.append([])
         for n in range(10):
             TargetBoard[i].append([])
             TargetBoard[i][n].append("[ ]")
             TargetBoard[i][n].append("cyan")
-
     
     while True: # Join or make a room
         print(colored("Join: J, Make a New Room: M", "cyan"))
@@ -152,7 +192,7 @@ def gameloop(): # Main Game Loop
         Pieces.append([0, 0, length, True])
         finished = False
         while not finished: # input and movement
-            printscreen()
+            printscreen(Board)
             inputvar = keyboard.read_key()
             if inputvar == "d":
                 Pieces[i][1] = Pieces[i][1] + 1
@@ -181,7 +221,7 @@ def gameloop(): # Main Game Loop
                 break
             time.sleep(0.2)
 
-    while True:
+    while True: # Shooting
         if player == 0:
             finished = False
             while not finished:
